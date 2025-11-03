@@ -23,7 +23,7 @@
         <div v-if="loading" class="text-xs text-[#02DA7F] mt-1">加载中...</div>
       </div>
       <div id="controls" class="justify-between h-[85%] bg-[#1A1B1D] rounded-bl-2xl border-l border-[#323233] overflow-hidden flex flex-col">
-        <div id="factors" class="p-2 border-b border-[#323233] h-[80%] flex flex-col">  
+        <div id="factors" class="p-2 border-b border-[#323233] h-[80%] flex flex-col text-gray-400">  
           <div class="text-sm font-semibold text-[#02DA7F] h-[2%]">Factors</div>
           <div class="overflow-y-scroll h-[98%] mt-4">
             <div v-for="header in headers" :key="header" class="text-sm mb-1 flex items-center">
@@ -64,9 +64,13 @@
         </div>
       </div>
     </div>
-    <div id="chartsection" class="w-5/6 h-full border-l border-[#323233] flex flex-col">
-      <div id="chart" class="h-[98%] w-full"></div>
-      <div id="debug" class="h-[2%] w-full bg-[#323336] rounded-br-2xl text-xs text-center flex items-center justify-center">{{ debugInfo }}</div>
+    <div id="chartsection" class="w-5/6 h-full border-l border-[#323233] flex flex-col justify-center justify-items-center">
+      <div id="fileinfo" class="h-[2%] w-full bg-[#323336] text-xs flex items-center justify-center px-4 text-gray-500 border border-[#323233]">
+        <span v-if="currentFile">当前文件: {{ currentFile.name }}</span>
+        <span v-else>请先加载文件</span>
+      </div>
+      <div id="chart" class="h-[96%] w-full"></div>
+      <div id="debug" class="h-[2%] w-full bg-[#323336] text-xs flex items-center justify-start px-4 text-gray-500">DEBUG: {{ debugInfo }}</div>
     </div>
   </div>
 </template>
