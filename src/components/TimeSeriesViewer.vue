@@ -1,5 +1,5 @@
 <template>
-  <div id="container" class="h-[95%] flex justify-center items-center bg-[#202124] flex-row aspect-video text-white rounded-2xl border border-[#323233]">
+  <div id="container" class="h-[95%] flex justify-center items-center bg-[#202124] flex-row aspect-video text-white rounded-l-2xl border border-[#323233]">
     <div id="sidebar" class="w-1/6 h-full">
       <div id="fileload" class="flex flex-col justify-center items-center bg-[#202124] p-2 h-[15%] border-l border-[#323233] rounded-tl-2xl">
         <button @click="triggerFileUpload" class="w-[80%] text-white bg-[#02DA7F] h-[40%] cursor-pointer rounded-md text-sm hover:bg-[#02b875] duration-200 mb-2">
@@ -64,13 +64,13 @@
         </div>
       </div>
     </div>
-    <div id="chartsection" class="w-5/6 h-full border-l border-[#323233] flex flex-col justify-center justify-items-center">
-      <div id="fileinfo" class="h-[2%] w-full bg-[#323336] text-xs flex items-center justify-center px-4 text-gray-500 border border-[#323233]">
+    <div id="chartsection" class="bg-[#1A1B1D] w-5/6 h-full border-l border-[#323233] flex flex-col justify-center items-center">
+      <div id="fileinfo" class="h-[2%] w-full bg-[#1A1B1D] text-xs flex items-center justify-center px-4 text-gray-500">
         <span v-if="currentFile">当前文件: {{ currentFile.name }}</span>
         <span v-else>请先加载文件</span>
       </div>
-      <div id="chart" class="h-[96%] w-full"></div>
-      <div id="debug" class="h-[2%] w-full bg-[#323336] text-xs flex items-center justify-start px-4 text-gray-500">DEBUG: {{ debugInfo }}</div>
+      <div id="chart" class="h-[96%] w-[99%] rounded bg-[#111]"></div>
+      <div id="debug" class="h-[2%] w-full bg-[#1A1B1D] text-xs flex items-center justify-center text-gray-500 ">DEBUG: {{ debugInfo }}</div>
     </div>
   </div>
 </template>
