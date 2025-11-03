@@ -25,7 +25,7 @@
       <div id="controls" class="justify-between h-[85%] bg-[#1A1B1D] rounded-bl-2xl border-l border-[#323233] overflow-hidden flex flex-col">
         <div id="factors" class="p-2 border-b border-[#323233] h-[80%] flex flex-col">  
           <div class="text-sm font-semibold text-[#02DA7F] h-[2%]">Factors</div>
-          <div class="overflow-y-scroll h-[98%] mt-2">
+          <div class="overflow-y-scroll h-[98%] mt-4">
             <div v-for="header in headers" :key="header" class="text-sm mb-1 flex items-center">
               <input type="checkbox" :value="header" v-model="selectedMetrics" class="mr-2 accent-[#02DA7F]">
               <span>{{ header }}</span>
