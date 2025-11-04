@@ -1,5 +1,5 @@
 <template>
-  <div id="container" class="h-[95%] flex justify-center items-center bg-[#202124] flex-row aspect-video text-white rounded-l-2xl border border-[#323233]">
+  <div id="container" class="max-w-[1572px] h-[95%] flex justify-center items-center bg-[#202124] flex-row aspect-video text-white rounded-l-2xl border border-[#323233]">
     <div id="sidebar" class="w-1/6 h-full">
       <div id="fileload" class="flex flex-col justify-center items-center bg-[#202124] p-2 h-[15%] border-l border-[#323233] rounded-tl-2xl">
         <button @click="triggerFileUpload" class="w-[80%] text-white bg-[#02DA7F] h-[40%] cursor-pointer rounded-md text-sm hover:bg-[#02b875] duration-200 mb-2">
@@ -30,7 +30,7 @@
               <input type="checkbox" :value="header" v-model="selectedMetrics" class="mr-2 accent-[#02DA7F]">
               <span>{{ header }}</span>
             </div>
-            <div v-if="headers.length === 0" class="text-sm text-gray-500 text-center py-2">请先加载CSV文件</div>
+            <div v-if="headers.length === 0" class="text-sm text-gray-500 text-center py-2">Please Load File first.</div>
           </div>
         </div>
         <div id="timeselect" class="p-2 flex-1 flex flex-col h-[20%]">
@@ -60,17 +60,71 @@
             <input type="range" v-model.number="timeRange.end" :min="0" :max="csvData.length - 1" 
                    class="accent-[#02DA7F]" @input="updateChart">
           </div>
-          <div v-else class="text-sm text-gray-500 text-center py-2">请先加载CSV文件</div>
+          <div v-else class="text-sm text-gray-500 text-center py-2">Please Load File first.</div>
         </div>
       </div>
     </div>
-    <div id="chartsection" class="bg-[#1A1B1D] w-5/6 h-full border-l border-[#323233] flex flex-col justify-center items-center">
+    <div id="chartsection" class="bg-[#1A1B1D] w-5/6 h-full border-l border-[#323233] flex flex-col justify-between items-center">
       <div id="fileinfo" class="h-[2%] w-full bg-[#1A1B1D] text-xs flex items-center justify-center px-4 text-gray-500">
-        <span v-if="currentFile">当前文件: {{ currentFile.name }}</span>
-        <span v-else>请先加载文件</span>
+        <span v-if="currentFile">{{ currentFile.name }}</span>
+        <span v-else class="text-[#02DA7F] animate-pulse">Please Load File first....</span>
       </div>
-      <div id="chart" class="h-[96%] w-[99%] rounded bg-[#111]"></div>
-      <div id="debug" class="h-[2%] w-full bg-[#1A1B1D] text-xs flex items-center justify-center text-gray-500 ">DEBUG: {{ debugInfo }}</div>
+      <div class="h-[82%] w-[99%] bg-[#202124] rounded-2xl justify-center flex items-center">
+        <div id="chart" class="w-[98%] h-[98%]"></div>
+      </div>
+      <div id="bash" class="h-[16%] w-[99%] text-xs flex text-gray-500 my-[1%] flex-col">
+        <div class="w-full flex items-center flex-col h-full"> 
+          <div id="factor-summary" class="flex w-full h-5/9 items-center">
+            <div v-if="selectedFactor" class="flex mx-1 justify-start">
+              <div class="mr-4">
+                <div class="font-semibold text-[#02DA7F] mb-1 mx-2">全局数据</div>
+                <div class="flex mx-1">
+                  <div class="mx-2">均值:</div>
+                  <div>{{ factorStats.mean || '-' }}</div>
+                  <div class="mx-2">最小值:</div>
+                  <div>{{ factorStats.min || '-' }}</div>
+                </div>
+                <div class="flex mx-1">
+                  <div class="mx-2">最大值:</div>
+                  <div>{{ factorStats.max || '-' }}</div>
+                  <div class="mx-2">方差:</div>
+                  <div>{{ factorStats.variance || '-' }}</div>
+                </div>
+              </div>
+              <div>
+                <div class="font-semibold text-[#02DA7F] mb-1 mx-2">局部数据({{ timeRange.start }} - {{ timeRange.end }})</div>
+                <div class="flex mx-1">
+                  <div class="mx-2">均值:</div>
+                  <div>{{ timeRangeStats.mean || '-' }}</div>
+                  <div class="mx-2">最小值:</div>
+                  <div>{{ timeRangeStats.min || '-' }}</div>
+                </div>
+                <div class="flex mx-1">
+                  <div class="mx-2">最大值:</div>
+                  <div>{{ timeRangeStats.max || '-' }}</div>
+                  <div class="mx-2">方差:</div>
+                  <div>{{ timeRangeStats.variance || '-' }}</div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="text-gray-500 text-xs flex justify-center items-center"></div>
+          </div>
+          <div id="factor-select" class="w-full h-4/9 flex p-2 justify-start ">
+            <div class="w-full flex gap-2  overflow-y-hidden overflow-x-auto">
+              <button 
+                v-for="header in headers" 
+                :key="header"
+                @click="selectedFactor = header"
+                :class="['px-3 py-1 text-xs rounded-md transition-all duration-200 text-nowrap', 
+                         selectedFactor === header ? 'bg-[#02DA7F] text-white' : 'bg-[#2a2b2d] text-gray-400 hover:bg-[#3a3b3d]']"
+              >
+                {{ header }}
+              </button>
+            </div>
+          </div>
+      </div>
+      </div>
+      <!-- <div id="debug" class="h-[2%] w-full bg-[#1A1B1D] text-xs flex items-center justify-center text-gray-500 ">{{ debugInfo }}</div> -->
     </div>
   </div>
 </template>
@@ -88,9 +142,12 @@ const chartInstance = ref(null);
 const timeRange = ref({ start: 0, end: 99 });
 const loading = ref(false);
 const encoding = ref('utf-8');
-const debugInfo = ref('Ready');
+const debugInfo = ref('（๑ • ‿ • ๑ ）');
 const currentFile = ref(null); // 保存当前上传的文件引用
-const activeDataLength = ref(0); // 保存当前激活的数据长度
+const selectedFactor = ref(''); // 当前选择的factor
+const factorStats = ref({ mean: null, min: null, max: null, variance: null }); // factor统计信息
+const timeRangeStats = ref({ mean: null, min: null, max: null, variance: null }); // 基于TimeRange的factor统计信息
+const activeDataLength = ref(0);
 
 // 触发文件上传
 const triggerFileUpload = () => {
@@ -149,12 +206,13 @@ const loadCSVFile = (file, fileEncoding) => {
         csvData.value.push(row);
       }
       
-      // 重置选中的指标和时间范围
-      selectedMetrics.value = [];
-      timeRange.value = { 
-        start: 0, 
-        end: Math.min(100, csvData.value.length - 1) 
-      };
+      // 重置选中的指标、时间范围和factor选择
+    selectedMetrics.value = [];
+    selectedFactor.value = '';
+    timeRange.value = { 
+      start: 0, 
+      end: Math.min(100, csvData.value.length - 1) 
+    };
       
       debugInfo.value = `已使用${fileEncoding}编码加载 ${csvData.value.length} 行数据`;
       console.log('CSV数据已加载:', csvData.value.length, '行，编码:', fileEncoding);
@@ -226,7 +284,7 @@ const updateChart = () => {
   // 当没有选中任何指标时，清除图表内容
   if (selectedMetrics.value.length === 0) {
     chartInstance.value.clear();
-    debugInfo.value = '未选择任何指标';
+    debugInfo.value = 'Not factor selected yet';
     return;
   }
   
@@ -289,7 +347,6 @@ const updateChart = () => {
   
   // 设置图表配置
   const option = {
-    backgroundColor: '#202124',
     tooltip: tooltipConfig,
     legend: {
       data: selectedMetrics.value,
@@ -350,6 +407,24 @@ watch(selectedMetrics, () => {
   updateChart();
 }, { deep: true });
 
+// 监听factor选择变化，计算统计信息
+watch(selectedFactor, (newFactor) => {
+  if (newFactor && csvData.value.length > 0) {
+    calculateFactorStats(newFactor);
+  } else {
+    // 重置统计信息
+    factorStats.value = { mean: null, min: null, max: null, variance: null };
+    timeRangeStats.value = { mean: null, min: null, max: null, variance: null };
+  }
+});
+
+// 监听timeRange变化，更新TimeRange统计信息
+watch(timeRange, () => {
+  if (selectedFactor.value && csvData.value.length > 0) {
+    calculateTimeRangeStats(selectedFactor.value);
+  }
+}, { deep: true });
+
 // 监听编码变化，当有文件且编码变化时重新加载
 watch(encoding, (newEncoding, oldEncoding) => {
   if (currentFile.value && newEncoding !== oldEncoding) {
@@ -357,6 +432,88 @@ watch(encoding, (newEncoding, oldEncoding) => {
     loadCSVFile(currentFile.value, newEncoding);
   }
 });
+
+// 计算factor的统计信息（忽略空值）
+const calculateFactorStats = (factor) => {
+  // 过滤出有效的数值数据
+  const validValues = csvData.value
+    .map(row => row[factor])
+    .filter(value => value !== null && value !== undefined && value !== '' && typeof value === 'number' && !isNaN(value));
+  
+  if (validValues.length === 0) {
+    factorStats.value = { mean: null, min: null, max: null, variance: null };
+  } else {
+    // 计算最小值和最大值
+    const min = Math.min(...validValues);
+    const max = Math.max(...validValues);
+    
+    // 计算均值
+    const sum = validValues.reduce((acc, val) => acc + val, 0);
+    const mean = sum / validValues.length;
+    
+    // 计算方差
+    const squaredDiffs = validValues.map(val => Math.pow(val - mean, 2));
+    const varianceSum = squaredDiffs.reduce((acc, val) => acc + val, 0);
+    const variance = varianceSum / validValues.length;
+    
+    // 更新统计信息，保留适当的小数位数
+    factorStats.value = {
+      mean: mean.toFixed(6),
+      min: min.toFixed(6),
+      max: max.toFixed(6),
+      variance: variance.toFixed(6)
+    };
+  }
+  
+  // 同时计算TimeRange范围内的统计信息
+  calculateTimeRangeStats(factor);
+};
+
+// 计算基于TimeRange的factor统计信息（忽略空值）
+const calculateTimeRangeStats = (factor) => {
+  if (!factor || csvData.value.length === 0) {
+    timeRangeStats.value = { mean: null, min: null, max: null, variance: null };
+    return;
+  }
+  
+  // 确保时间范围有效
+  const start = Math.max(0, Math.min(timeRange.value.start, csvData.value.length - 1));
+  const end = Math.max(start, Math.min(timeRange.value.end, csvData.value.length - 1));
+  
+  // 获取时间范围内的数据
+  const rangeData = csvData.value.slice(start, end + 1);
+  
+  // 过滤出有效的数值数据
+  const validValues = rangeData
+    .map(row => row[factor])
+    .filter(value => value !== null && value !== undefined && value !== '' && typeof value === 'number' && !isNaN(value));
+  
+  if (validValues.length === 0) {
+    timeRangeStats.value = { mean: null, min: null, max: null, variance: null };
+    return;
+  }
+  
+  // 计算最小值和最大值
+  const min = Math.min(...validValues);
+  const max = Math.max(...validValues);
+  
+  // 计算均值
+  const sum = validValues.reduce((acc, val) => acc + val, 0);
+  const mean = sum / validValues.length;
+  
+  // 计算方差
+  const squaredDiffs = validValues.map(val => Math.pow(val - mean, 2));
+  const varianceSum = squaredDiffs.reduce((acc, val) => acc + val, 0);
+  const variance = varianceSum / validValues.length;
+  
+  // 更新统计信息，保留适当的小数位数
+  timeRangeStats.value = {
+    mean: mean.toFixed(6),
+    min: min.toFixed(6),
+    max: max.toFixed(6),
+    variance: variance.toFixed(6)
+  };
+};
 
 // 组件挂载时初始化图表
 onMounted(() => {
@@ -381,6 +538,34 @@ onMounted(() => {
 
 #factors ::-webkit-scrollbar-thumb:hover {
   background: #777;
+}
+
+/* factor-select横向滚动条样式 - WebKit浏览器 */
+#factor-select::-webkit-scrollbar {
+  height: 6px;
+  margin: 0 12px;
+}
+#factor-select::-webkit-scrollbar-track {
+  background-color: #2a2b2d;
+  border-radius: 3px;
+}
+
+#factor-select::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
+}
+
+#factor-select::-webkit-scrollbar-thumb:hover {
+  background: #777;
+}
+
+#factor-select {  
+  scrollbar-color: #555 transparent;
+}
+
+#factor-select {
+  max-height: 50%;
 }
 
 /* 确保factors区域有滚动条 */
