@@ -1,10 +1,10 @@
 <template>
-  <div id="container" class="max-w-[1572px] h-[95%] flex justify-center items-center bg-[#202124] flex-row aspect-video text-white rounded-l-2xl border border-[#323233]">
+  <div id="container" class="max-w-[80%] h-[95%] aspect-video flex justify-center items-center bg-[#202124] flex-row  text-white rounded-l-2xl border border-[#323233]">
     <div id="sidebar" class="w-1/6 h-full">
       <div id="fileload" class="flex flex-col justify-center items-center bg-[#202124] p-2 h-[15%] border-l border-[#323233] rounded-tl-2xl">
-        <button @click="triggerFileUpload" class="w-[80%] text-white bg-[#02DA7F] h-[40%] cursor-pointer rounded-md text-sm hover:bg-[#02b875] duration-200 mb-2">
+        <!-- <button @click="triggerFileUpload" class="w-[80%] text-white bg-[#02DA7F] h-[40%] cursor-pointer rounded-md text-sm hover:bg-[#02b875] duration-200 mb-2">
           Load File
-        </button>
+        </button> -->
         <input ref="fileInput" type="file" accept=".csv" @change="handleFileUpload" class="hidden">
         <div class="w-[80%] mt-2 flex rounded-md overflow-hidden">
           <button 
@@ -56,24 +56,52 @@
             </div>
             <div class="text-xs text-gray-500 mb-2">范围: 0 - {{ csvData.length - 1 }}</div>
             <input type="range" v-model.number="timeRange.start" :min="0" :max="csvData.length - 1" 
-                   class="accent-[#02DA7F] mb-3" @input="updateChart">
+                   class="appearance-none mb-3" @input="updateChart">
             <input type="range" v-model.number="timeRange.end" :min="0" :max="csvData.length - 1" 
-                   class="accent-[#02DA7F]" @input="updateChart">
+                   class="appearance-none " @input="updateChart">
           </div>
           <div v-else class="text-sm text-gray-500 text-center py-2">Please Load File first.</div>
         </div>
       </div>
     </div>
     <div id="chartsection" class="bg-[#1A1B1D] w-5/6 h-full border-l border-[#323233] flex flex-col justify-between items-center">
-      <div id="fileinfo" class="h-[2%] w-full bg-[#1A1B1D] text-xs flex items-center justify-center px-4 text-gray-500">
-        <span v-if="currentFile">{{ currentFile.name }}</span>
-        <span v-else class="text-[#02DA7F] animate-pulse">Please Load File first....</span>
+      <div id="fileinfo" class="h-[3%] w-[99%] bg-[#202124] text-xs flex items-center justify-start my-[1%] text-gray-500 rounded">
+        <div v-if="currentFile" class="cursor-pointer flex items-center justify-center text-gray-400 truncate bg-[#333] h-[90%] text-xs rounded px-1 mx-1 hover:text-gray-100 transition-colors duration-200">
+          {{ currentFile.name }}
+          <div class="flex p-0 items-center justify-center text-center ml-2 text-white bg-[#333] rounded-full aspect-square cursor-pointer h-[70%] text-xs hover:bg-[#d15858] duration-200">
+            ×
+          </div>
+        </div>
+        <div v-else class="text-[#02DA7F] whihespace-nowrap bg-[#333] h-[90%] text-xs rounded mx-1 "></div>
+        <div id="addfile" @click="triggerFileUpload" class="flex items-center justify-center text-center mx-2 text-white bg-[#333] rounded aspect-square cursor-pointer h-[80%] text-xs hover:bg-[#02b875] duration-200  ">
+          +
+        </div>
       </div>
-      <div class="h-[82%] w-[99%] bg-[#202124] rounded-2xl justify-center flex items-center">
+      <div class="h-[80%] w-[99%] bg-[#202124] rounded-2xl justify-center flex items-center">
         <div id="chart" class="w-[98%] h-[98%]"></div>
       </div>
       <div id="bash" class="h-[16%] w-[99%] text-xs flex text-gray-500 my-[1%] flex-col">
         <div class="w-full flex items-center flex-col h-full"> 
+          <div id="factor-select" class="w-full h-4/9 flex p-2 justify-start ">
+            <div class="w-full flex gap-2  overflow-y-hidden overflow-x-auto">
+              <button 
+                @click="selectedFactor = ''"
+                :class="['px-3 py-1 text-xs rounded-md transition-all duration-200 text-nowrap cursor-pointer', 
+                         selectedFactor === '' ? 'bg-[#2a2b2d] text-gray-400' : 'bg-[#2a2b2d] text-gray-400 hover:bg-[#3a3b3d]']"
+              >
+                Reset
+              </button>
+              <button 
+                v-for="header in headers" 
+                :key="header"
+                @click="selectedFactor = header"
+                :class="['px-3 py-1 text-xs rounded-md transition-all duration-200 text-nowrap cursor-pointer', 
+                         selectedFactor === header ? 'bg-[#02DA7F] text-white' : 'bg-[#2a2b2d] text-gray-400 hover:bg-[#3a3b3d]']"
+              >
+                {{ header }}
+              </button>
+            </div>
+          </div>
           <div id="factor-summary" class="flex w-full h-5/9 items-center">
             <div v-if="selectedFactor" class="flex mx-1 justify-start">
               <div class="mr-4">
@@ -109,22 +137,9 @@
             </div>
             <div v-else class="text-gray-500 text-xs flex justify-center items-center"></div>
           </div>
-          <div id="factor-select" class="w-full h-4/9 flex p-2 justify-start ">
-            <div class="w-full flex gap-2  overflow-y-hidden overflow-x-auto">
-              <button 
-                v-for="header in headers" 
-                :key="header"
-                @click="selectedFactor = header"
-                :class="['px-3 py-1 text-xs rounded-md transition-all duration-200 text-nowrap', 
-                         selectedFactor === header ? 'bg-[#02DA7F] text-white' : 'bg-[#2a2b2d] text-gray-400 hover:bg-[#3a3b3d]']"
-              >
-                {{ header }}
-              </button>
-            </div>
-          </div>
+
+        </div>
       </div>
-      </div>
-      <!-- <div id="debug" class="h-[2%] w-full bg-[#1A1B1D] text-xs flex items-center justify-center text-gray-500 ">{{ debugInfo }}</div> -->
     </div>
   </div>
 </template>
@@ -142,7 +157,6 @@ const chartInstance = ref(null);
 const timeRange = ref({ start: 0, end: 99 });
 const loading = ref(false);
 const encoding = ref('utf-8');
-const debugInfo = ref('（๑ • ‿ • ๑ ）');
 const currentFile = ref(null); // 保存当前上传的文件引用
 const selectedFactor = ref(''); // 当前选择的factor
 const factorStats = ref({ mean: null, min: null, max: null, variance: null }); // factor统计信息
@@ -174,7 +188,6 @@ const loadCSVFile = (file, fileEncoding) => {
   if (!file) return;
   
   loading.value = true;
-  debugInfo.value = `使用${fileEncoding}编码加载中...`;
   
   // 使用FileReader读取文件
   const reader = new FileReader();
@@ -214,11 +227,9 @@ const loadCSVFile = (file, fileEncoding) => {
       end: Math.min(100, csvData.value.length - 1) 
     };
       
-      debugInfo.value = `已使用${fileEncoding}编码加载 ${csvData.value.length} 行数据`;
       console.log('CSV数据已加载:', csvData.value.length, '行，编码:', fileEncoding);
     } catch (error) {
       console.error('解析CSV文件失败:', error);
-      debugInfo.value = `使用${fileEncoding}编码解析失败，请尝试其他编码`;
     } finally {
       loading.value = false;
     }
@@ -226,7 +237,6 @@ const loadCSVFile = (file, fileEncoding) => {
   
   reader.onerror = () => {
     console.error('文件读取失败');
-    debugInfo.value = `使用${fileEncoding}编码读取文件失败`;
     loading.value = false;
   };
   
@@ -284,7 +294,6 @@ const updateChart = () => {
   // 当没有选中任何指标时，清除图表内容
   if (selectedMetrics.value.length === 0) {
     chartInstance.value.clear();
-    debugInfo.value = 'Not factor selected yet';
     return;
   }
   
@@ -399,7 +408,6 @@ show: false // 隐藏X轴轴线
   
   // 使用notMerge:true确保图表完全重新渲染，不合并旧配置
   chartInstance.value.setOption(option, true);
-  debugInfo.value = `显示 ${selectedMetrics.value.length} 个指标，${filteredData.length} 个数据点`;
 };
 
 // 监听选中指标变化
@@ -561,7 +569,11 @@ onMounted(() => {
 }
 
 #factor-select {  
-  scrollbar-color: #555 transparent;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.2s ease;
+}
+#factor-select:hover {  
+  scrollbar-color: #333 transparent;
 }
 
 #factor-select {
@@ -584,11 +596,10 @@ onMounted(() => {
 
 #timeselect input[type="range"]::-webkit-slider-thumb {
   appearance: none;
-  width: 12px;
-  height: 12px;
+  width: 8px;
+  height: 4px;
   background: #02DA7F;
   cursor: pointer;
-  border-radius: 50%;
 }
 
 /* 复选框样式 */
