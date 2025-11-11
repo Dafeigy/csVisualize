@@ -1,41 +1,45 @@
 <template>
   <div id="container" class="max-w-[80%] h-[95%] aspect-video flex justify-center items-center bg-[#202124] flex-row  text-white rounded-l-2xl border border-[#323233]">
     <div id="sidebar" class="w-1/6 h-full">
-      <div id="fileload" class="flex flex-col justify-center items-center bg-[#202124] p-2 h-[15%] border-l border-[#323233] rounded-tl-2xl">
-        <!-- <button @click="triggerFileUpload" class="w-[80%] text-white bg-[#02DA7F] h-[40%] cursor-pointer rounded-md text-sm hover:bg-[#02b875] duration-200 mb-2">
-          Load File
-        </button> -->
-        <input ref="fileInput" type="file" accept=".csv" @change="handleFileUpload" class="hidden">
-        <div class="w-[80%] mt-2 flex rounded-md overflow-hidden">
-          <button 
-            :class="['flex-1 py-1 text-sm transition-all duration-200', encoding === 'utf-8' ? 'bg-[#02DA7F] text-white' : 'bg-[#2a2b2d] text-gray-400 hover:bg-[#3a3b3d]']"
-            @click="encoding = 'utf-8'"
-          >
-            UTF-8
-          </button>
-          <button 
-            :class="['flex-1 py-1 text-sm transition-all duration-200', encoding === 'gbk' ? 'bg-[#02DA7F] text-white' : 'bg-[#2a2b2d] text-gray-400 hover:bg-[#3a3b3d]']"
-            @click="encoding = 'gbk'"
-          >
-            GBK
-          </button>
-        </div>
+      <div id="logo" class="flex justify-center items-center bg-[#202124] p-2 h-[10%] border-l border-[#323233] rounded-tl-2xl">
+        <!-- 文件输入框已移至组件底部 -->
+        <svg height="1em" style="flex:none;line-height:1" viewBox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><title>TRAE</title><path d="M24 20.541H3.428v-3.426H0V3.4h24V20.54zM3.428 17.115h17.144V6.827H3.428v10.288zm8.573-5.196l-2.425 2.424-2.424-2.424 2.424-2.424 2.425 2.424zm6.857-.001l-2.424 2.423-2.425-2.423 2.425-2.425 2.424 2.425z" fill="#32F08C"></path></svg>
+        <p class="mx-2">NUL4i</p>
         <div v-if="loading" class="text-xs text-[#02DA7F] mt-1">加载中...</div>
       </div>
-      <div id="controls" class="justify-between h-[85%] bg-[#1A1B1D] rounded-bl-2xl border-l border-[#323233] overflow-hidden flex flex-col">
-        <div id="factors" class="p-2 border-b border-[#323233] h-[80%] flex flex-col text-gray-400">  
-          <div class="text-sm font-semibold text-[#02DA7F] h-[2%]">Factors</div>
-          <div class="overflow-y-scroll h-[98%] mt-4">
-            <div v-for="header in headers" :key="header" class="text-sm mb-1 flex items-center">
-              <input type="checkbox" :value="header" v-model="selectedMetrics" class="mr-2 accent-[#02DA7F]">
-              <span>{{ header }}</span>
+      <div id="controls" class="justify-between h-[90%] bg-[#1A1B1D] rounded-bl-2xl border-l border-[#323233] overflow-hidden flex flex-col">
+        <div id="factors" class="p-2 border-b border-[#323233] h-[80%] flex flex-col text-gray-400 ">  
+          <div class="text-sm font-semibold text-[#02DA7F] h-[2%] flex items-center w-full justify-between">
+            <p class="mr-1 w-1/2">Factors</p>
+            <div class=" mt-2 flex rounded-md overflow-hidden text-nowrap w-1/2">
+              <button 
+                :class="['h-1/2 w-1/2 flex-1 py-1 text-xs transition-all duration-200', encoding === 'utf-8' ? 'bg-[#02DA7F] text-white' : 'bg-[#2a2b2d] text-gray-400 hover:bg-[#3a3b3d]']"
+                @click="encoding = 'utf-8'"
+              >
+                UTF-8
+              </button>
+              <button 
+                :class="['h-1/2 w-1/2 flex-1 py-1 text-xs transition-all duration-200', encoding === 'gbk' ? 'bg-[#02DA7F] text-white' : 'bg-[#2a2b2d] text-gray-400 hover:bg-[#3a3b3d]']"
+                @click="encoding = 'gbk'"
+              >
+                GBK
+              </button>
             </div>
-            <div v-if="headers.length === 0" class="text-sm text-gray-500 text-center py-2">Please Load File first.</div>
+          </div>
+          
+          <div class="overflow-y-scroll h-[98%] mt-4">
+            <div v-if="activeFileId && filesData[activeFileId] && filesData[activeFileId].headers">
+              <div v-for="header in filesData[activeFileId].headers" :key="header" class="text-sm mb-1 flex items-center">
+                <input type="checkbox" :value="header" v-model="selectedMetrics" class="mr-2 accent-[#02DA7F]">
+                <span>{{ header }}</span>
+              </div>
+            </div>
+            <div v-if="!activeFileId || !filesData[activeFileId] || !filesData[activeFileId].headers || filesData[activeFileId].headers.length === 0" class="text-sm text-gray-500 text-center py-2">Please Load File first.</div>
           </div>
         </div>
         <div id="timeselect" class="p-2 flex-1 flex flex-col h-[20%]">
           <div class="text-sm font-semibold text-[#02DA7F]">Time Range</div>
-          <div v-if="csvData.length > 0" class="flex-1 flex flex-col">
+          <div v-if="activeFileId && filesData[activeFileId] && filesData[activeFileId].csvData && filesData[activeFileId].csvData.length > 0" class="flex-1 flex flex-col">
             <div class="grid grid-cols-2 gap-2 mb-3">
               <div class="flex flex-col">
                 <label class="text-xs text-gray-400 mb-1">Start:</label>
@@ -48,16 +52,16 @@
               <div class="flex flex-col">
                 <label class="text-xs text-gray-400 mb-1">End:</label>
                 <div class="flex items-center">
-                  <input type="number" v-model.number="timeRange.end" :min="timeRange.start" :max="csvData.length - 1" 
+                  <input type="number" v-model.number="timeRange.end" :min="timeRange.start" :max="activeFileId && filesData[activeFileId] && filesData[activeFileId].csvData ? filesData[activeFileId].csvData.length - 1 : 99" 
                          class="bg-[#2a2b2d] text-white text-xs p-1 rounded border border-[#555] w-full" 
                          @change="handleEndInputChange">
                 </div>
               </div>
             </div>
-            <div class="text-xs text-gray-500 mb-2">范围: 0 - {{ csvData.length - 1 }}</div>
-            <input type="range" v-model.number="timeRange.start" :min="0" :max="csvData.length - 1" 
+            <div class="text-xs text-gray-500 mb-2">范围: 0 - {{ activeFileId && filesData[activeFileId] && filesData[activeFileId].csvData ? filesData[activeFileId].csvData.length - 1 : 99 }}</div>
+            <input type="range" v-model.number="timeRange.start" :min="0" :max="activeFileId && filesData[activeFileId] && filesData[activeFileId].csvData ? filesData[activeFileId].csvData.length - 1 : 99" 
                    class="appearance-none mb-3" @input="updateChart">
-            <input type="range" v-model.number="timeRange.end" :min="0" :max="csvData.length - 1" 
+            <input type="range" v-model.number="timeRange.end" :min="0" :max="activeFileId && filesData[activeFileId] && filesData[activeFileId].csvData ? filesData[activeFileId].csvData.length - 1 : 99" 
                    class="appearance-none " @input="updateChart">
           </div>
           <div v-else class="text-sm text-gray-500 text-center py-2">Please Load File first.</div>
@@ -65,19 +69,23 @@
       </div>
     </div>
     <div id="chartsection" class="bg-[#1A1B1D] w-5/6 h-full border-l border-[#323233] flex flex-col justify-between items-center">
-      <div id="fileinfo" class="h-[3%] w-[99%] bg-[#202124] text-xs flex items-center justify-start my-[1%] text-gray-500 rounded">
-        <div v-if="currentFile" class="cursor-pointer flex items-center justify-center text-gray-400 truncate bg-[#333] h-[90%] text-xs rounded px-1 mx-1 hover:text-gray-100 transition-colors duration-200">
-          {{ currentFile.name }}
-          <div class="flex p-0 items-center justify-center text-center ml-2 text-white bg-[#333] rounded-full aspect-square cursor-pointer h-[70%] text-xs hover:bg-[#d15858] duration-200">
-            ×
-          </div>
-        </div>
-        <div v-else class="text-[#02DA7F] whihespace-nowrap bg-[#333] h-[90%] text-xs rounded mx-1 "></div>
-        <div id="addfile" @click="triggerFileUpload" class="flex items-center justify-center text-center mx-2 text-white bg-[#333] rounded aspect-square cursor-pointer h-[80%] text-xs hover:bg-[#02b875] duration-200  ">
-          +
-        </div>
-      </div>
-      <div class="h-[80%] w-[99%] bg-[#202124] rounded-2xl justify-center flex items-center">
+      <!-- 文件管理器组件 -->
+      <FileManager
+        ref="fileManager"
+        :active-file-id="activeFileId"
+        @file-added="handleFileAdded"
+        @file-removed="handleFileRemoved"
+        @file-switched="handleFileSwitched"
+      />
+      
+      <!-- 隐藏的文件输入框 -->
+      <input 
+        ref="fileInput"
+        type="file" 
+        accept=".csv" 
+        class="hidden"
+      />
+      <div class="h-[75%] w-[99%] bg-[#202124] rounded-2xl justify-center flex items-center my-2">
         <div id="chart" class="w-[98%] h-[98%]"></div>
       </div>
       <div id="bash" class="h-[16%] w-[99%] text-xs flex text-gray-500 my-[1%] flex-col">
@@ -91,15 +99,17 @@
               >
                 Reset
               </button>
-              <button 
-                v-for="header in headers" 
-                :key="header"
-                @click="selectedFactor = header"
-                :class="['px-3 py-1 text-xs rounded-md transition-all duration-200 text-nowrap cursor-pointer', 
-                         selectedFactor === header ? 'bg-[#02DA7F] text-white' : 'bg-[#2a2b2d] text-gray-400 hover:bg-[#3a3b3d]']"
-              >
-                {{ header }}
-              </button>
+              <template v-if="activeFileId && filesData[activeFileId] && filesData[activeFileId].headers">
+                <button 
+                  v-for="header in filesData[activeFileId].headers" 
+                  :key="header"
+                  @click="selectedFactor = header"
+                  :class="['px-3 py-1 text-xs rounded-md transition-all duration-200 text-nowrap cursor-pointer', 
+                           selectedFactor === header ? 'bg-[#02DA7F] text-white' : 'bg-[#2a2b2d] text-gray-400 hover:bg-[#3a3b3d]']"
+                >
+                  {{ header }}
+                </button>
+              </template>
             </div>
           </div>
           <div id="factor-summary" class="flex w-full h-5/9 items-center">
@@ -147,45 +157,84 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue';
 import * as echarts from 'echarts';
+import FileManager from './FileManager.vue';
+
+// 组件引用
+const fileManager = ref(null);
 
 // 状态管理
-const fileInput = ref(null);
-const csvData = ref([]);
-const headers = ref([]);
-const selectedMetrics = ref([]);
 const chartInstance = ref(null);
 const timeRange = ref({ start: 0, end: 99 });
 const loading = ref(false);
 const encoding = ref('utf-8');
-const currentFile = ref(null); // 保存当前上传的文件引用
+const selectedMetrics = ref([]);
 const selectedFactor = ref(''); // 当前选择的factor
 const factorStats = ref({ mean: null, min: null, max: null, variance: null }); // factor统计信息
 const timeRangeStats = ref({ mean: null, min: null, max: null, variance: null }); // 基于TimeRange的factor统计信息
 const activeDataLength = ref(0);
 
-// 触发文件上传
-const triggerFileUpload = () => {
-  fileInput.value?.click();
+// 多文件管理状态
+const activeFileId = ref(null);
+const filesData = ref({}); // 存储所有文件的数据，键为fileId
+
+// 处理文件添加事件
+const handleFileAdded = (fileData) => {
+  // 加载新添加的文件
+  loadCSVFile(fileData.file, encoding.value, fileData.id);
+  
+  // 如果是第一个文件，自动激活
+  if (!activeFileId.value) {
+    activeFileId.value = fileData.id;
+  }
 };
 
-// 处理文件上传
-const handleFileUpload = (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
+// 处理文件移除事件
+const handleFileRemoved = (fileId) => {
+  // 删除文件数据
+  delete filesData.value[fileId];
   
-  // 保存当前文件引用
-  currentFile.value = file;
+  // 如果移除的是当前激活的文件，清除图表和状态
+  if (activeFileId.value === fileId) {
+    resetChartAndStats();
+  }
+};
+
+// 处理文件切换事件
+const handleFileSwitched = (fileId) => {
+  activeFileId.value = fileId;
+  const fileData = filesData.value[fileId];
   
-  // 加载文件
-  loadCSVFile(file, encoding.value);
+  if (fileData && fileData.status === 'loaded') {
+    // 重置选中的指标和factor
+    selectedMetrics.value = [];
+    selectedFactor.value = '';
+    
+    // 更新时间范围
+    timeRange.value = {
+      start: 0,
+      end: Math.min(100, fileData.csvData.length - 1)
+    };
+    
+    // 更新图表
+    updateChart();
+  }
+};
+
+// 重置图表和统计信息
+const resetChartAndStats = () => {
+  selectedMetrics.value = [];
+  selectedFactor.value = '';
+  factorStats.value = { mean: null, min: null, max: null, variance: null };
+  timeRangeStats.value = { mean: null, min: null, max: null, variance: null };
   
-  // 清空input以允许重新选择同一文件
-  event.target.value = '';
+  if (chartInstance.value) {
+    chartInstance.value.clear();
+  }
 };
 
 // 加载CSV文件的函数
-const loadCSVFile = (file, fileEncoding) => {
-  if (!file) return;
+const loadCSVFile = (file, fileEncoding, fileId) => {
+  if (!file || !fileId) return;
   
   loading.value = true;
   
@@ -204,32 +253,54 @@ const loadCSVFile = (file, fileEncoding) => {
       }
       
       // 解析表头
-      headers.value = lines[0].split(',').map(h => h.trim());
+      const headers = lines[0].split(',').map(h => h.trim());
       
       // 解析数据
-      csvData.value = [];
+      const csvData = [];
       for (let i = 1; i < lines.length; i++) {
         const values = lines[i].split(',');
         const row = {};
-        headers.value.forEach((header, index) => {
+        headers.forEach((header, index) => {
           // 尝试转换为数字
           const numValue = parseFloat(values[index]);
           row[header] = isNaN(numValue) ? values[index]?.trim() || '' : numValue;
         });
-        csvData.value.push(row);
+        csvData.push(row);
       }
       
-      // 重置选中的指标、时间范围和factor选择
-    selectedMetrics.value = [];
-    selectedFactor.value = '';
-    timeRange.value = { 
-      start: 0, 
-      end: Math.min(100, csvData.value.length - 1) 
-    };
+      // 存储文件数据
+      filesData.value[fileId] = {
+        csvData: csvData,
+        headers: headers,
+        status: 'loaded'
+      };
       
-      console.log('CSV数据已加载:', csvData.value.length, '行，编码:', fileEncoding);
+      // 更新文件管理器中的文件状态
+      if (fileManager.value) {
+        fileManager.value.updateFileStatus(fileId, 'loaded', { csvData, headers });
+      }
+      
+      // 如果是当前激活的文件，更新图表
+      if (activeFileId.value === fileId) {
+        selectedMetrics.value = [];
+        selectedFactor.value = '';
+        timeRange.value = { 
+          start: 0, 
+          end: Math.min(100, csvData.length - 1) 
+        };
+        updateChart();
+      }
+      
+      console.log(`文件 ${file.name} 已加载:`, csvData.length, '行，编码:', fileEncoding);
     } catch (error) {
       console.error('解析CSV文件失败:', error);
+      // 更新文件状态为错误
+      if (filesData.value[fileId]) {
+        filesData.value[fileId].status = 'error';
+      }
+      if (fileManager.value) {
+        fileManager.value.updateFileStatus(fileId, 'error');
+      }
     } finally {
       loading.value = false;
     }
@@ -238,6 +309,13 @@ const loadCSVFile = (file, fileEncoding) => {
   reader.onerror = () => {
     console.error('文件读取失败');
     loading.value = false;
+    // 更新文件状态为错误
+    if (filesData.value[fileId]) {
+      filesData.value[fileId].status = 'error';
+    }
+    if (fileManager.value) {
+      fileManager.value.updateFileStatus(fileId, 'error');
+    }
   };
   
   reader.readAsText(file, fileEncoding);
@@ -263,31 +341,50 @@ const handleStartInputChange = () => {
     start = 0;
   } else if (start > timeRange.value.end) {
     start = timeRange.value.end;
-  } else if (start >= csvData.value.length) {
-    start = csvData.value.length - 1;
-  }
+  } else if (activeFileId.value && filesData.value[activeFileId.value] && filesData.value[activeFileId.value].csvData && start >= filesData.value[activeFileId.value].csvData.length) {
+      start = filesData.value[activeFileId.value].csvData.length - 1;
+    } else if (!activeFileId.value || !filesData.value[activeFileId.value] || !filesData.value[activeFileId.value].csvData) {
+      start = 0;
+    }
   timeRange.value.start = start;
   updateChart();
 };
 
 // 处理End输入变化
 const handleEndInputChange = () => {
-  // 确保end值有效
-  let end = parseInt(timeRange.value.end);
-  if (isNaN(end) || end >= csvData.value.length) {
-    end = csvData.value.length - 1;
-  } else if (end < timeRange.value.start) {
-    end = timeRange.value.start;
-  } else if (end < 0) {
-    end = 0;
-  }
-  timeRange.value.end = end;
-  updateChart();
-};
+    // 确保end值有效
+    let end = parseInt(timeRange.value.end);
+    
+    // 检查是否有活动文件
+    if (activeFileId.value && filesData.value[activeFileId.value] && filesData.value[activeFileId.value].csvData) {
+      // 设置文件数据的边界
+      if (isNaN(end) || end >= filesData.value[activeFileId.value].csvData.length) {
+        end = filesData.value[activeFileId.value].csvData.length - 1;
+      }
+    } else {
+      // 默认边界
+      end = 99;
+    }
+    
+    // 确保end值合理
+    if (end < timeRange.value.start) {
+      end = timeRange.value.start;
+    } else if (end < 0) {
+      end = 0;
+    }
+    
+    timeRange.value.end = end;
+    updateChart();
+  };
 
 // 更新图表
 const updateChart = () => {
-  if (!chartInstance.value || csvData.value.length === 0) {
+  if (!chartInstance.value || !activeFileId.value || !filesData.value[activeFileId.value]) {
+    return;
+  }
+  
+  const currentFileData = filesData.value[activeFileId.value];
+  if (!currentFileData.csvData || currentFileData.csvData.length === 0) {
     return;
   }
   
@@ -298,8 +395,8 @@ const updateChart = () => {
   }
   
   // 确保时间范围有效
-  const start = Math.max(0, Math.min(timeRange.value.start, csvData.value.length - 1));
-  const end = Math.max(start, Math.min(timeRange.value.end, csvData.value.length - 1));
+  const start = Math.max(0, Math.min(timeRange.value.start, currentFileData.csvData.length - 1));
+  const end = Math.max(start, Math.min(timeRange.value.end, currentFileData.csvData.length - 1));
   
   // 只有当值发生变化时才更新，避免无限循环
   if (timeRange.value.start !== start) {
@@ -310,9 +407,9 @@ const updateChart = () => {
   }
   
   // 准备数据
-  const filteredData = csvData.value.slice(start, end + 1);
+  const filteredData = currentFileData.csvData.slice(start, end + 1);
   // 假设第一列是时间列
-  const timeAxis = filteredData.map(row => row[headers.value[0]]);
+  const timeAxis = filteredData.map(row => row[currentFileData.headers[0]]);
   
   // 准备series数据
   const series = selectedMetrics.value.map(metric => {
@@ -415,36 +512,71 @@ watch(selectedMetrics, () => {
   updateChart();
 }, { deep: true });
 
+// 监听活动文件变化，重置统计信息
+watch(activeFileId, () => {
+  selectedFactor.value = '';
+  factorStats.value = { mean: null, min: null, max: null, variance: null };
+  timeRangeStats.value = { mean: null, min: null, max: null, variance: null };
+});
+
 // 监听factor选择变化，计算统计信息
-watch(selectedFactor, (newFactor) => {
-  if (newFactor && csvData.value.length > 0) {
-    calculateFactorStats(newFactor);
-  } else {
-    // 重置统计信息
+  watch(selectedFactor, (newFactor) => {
+    if (newFactor && activeFileId.value && filesData.value[activeFileId.value] && filesData.value[activeFileId.value].csvData && filesData.value[activeFileId.value].csvData.length > 0) {
+      calculateFactorStats(newFactor);
+    } else {
+      // 重置统计信息
+      factorStats.value = { mean: null, min: null, max: null, variance: null };
+      timeRangeStats.value = { mean: null, min: null, max: null, variance: null };
+    }
+  });
+
+  // 监听时间范围变化，重新计算统计信息
+  watch(timeRange, () => {
+    if (selectedFactor.value && activeFileId.value && filesData.value[activeFileId.value] && filesData.value[activeFileId.value].csvData && filesData.value[activeFileId.value].csvData.length > 0) {
+      calculateTimeRangeStats(selectedFactor.value);
+    }
+  }, { deep: true });
+
+// 监听编码变化，重新加载当前激活的文件
+watch(encoding, (newEncoding, oldEncoding) => {
+  if (activeFileId.value && newEncoding !== oldEncoding && filesData.value[activeFileId.value]) {
+    console.log(`编码从 ${oldEncoding} 切换到 ${newEncoding}，重新加载当前文件`);
+    const fileData = fileManager.value.filesData.find(fd => fd.id === activeFileId.value);
+    if (fileData) {
+      loadCSVFile(fileData.file, newEncoding, activeFileId.value);
+    }
+  }
+});
+
+// 清空文件数据
+const clearFileData = () => {
+    // 清空所有相关数据
+    // csvData和headers已不再作为全局变量，而是存储在filesData中
+    selectedMetrics.value = [];
+    selectedFactor.value = '';
     factorStats.value = { mean: null, min: null, max: null, variance: null };
     timeRangeStats.value = { mean: null, min: null, max: null, variance: null };
+    timeRange.value = { start: 0, end: 99 };
+  
+  // 清除图表内容
+  if (chartInstance.value) {
+    chartInstance.value.clear();
   }
-});
-
-// 监听timeRange变化，更新TimeRange统计信息
-watch(timeRange, () => {
-  if (selectedFactor.value && csvData.value.length > 0) {
-    calculateTimeRangeStats(selectedFactor.value);
-  }
-}, { deep: true });
-
-// 监听编码变化，当有文件且编码变化时重新加载
-watch(encoding, (newEncoding, oldEncoding) => {
-  if (currentFile.value && newEncoding !== oldEncoding) {
-    console.log(`编码从 ${oldEncoding} 切换到 ${newEncoding}，重新加载文件`);
-    loadCSVFile(currentFile.value, newEncoding);
-  }
-});
+  
+  console.log('文件数据已清空');
+};
 
 // 计算factor的统计信息（忽略空值）
 const calculateFactorStats = (factor) => {
+  if (!activeFileId.value || !filesData.value[activeFileId.value]) {
+    factorStats.value = { mean: null, min: null, max: null, variance: null };
+    return;
+  }
+  
+  const currentFileData = filesData.value[activeFileId.value];
+  
   // 过滤出有效的数值数据
-  const validValues = csvData.value
+  const validValues = currentFileData.csvData
     .map(row => row[factor])
     .filter(value => value !== null && value !== undefined && value !== '' && typeof value === 'number' && !isNaN(value));
   
@@ -479,17 +611,19 @@ const calculateFactorStats = (factor) => {
 
 // 计算基于TimeRange的factor统计信息（忽略空值）
 const calculateTimeRangeStats = (factor) => {
-  if (!factor || csvData.value.length === 0) {
+  if (!factor || !activeFileId.value || !filesData.value[activeFileId.value]) {
     timeRangeStats.value = { mean: null, min: null, max: null, variance: null };
     return;
   }
   
+  const currentFileData = filesData.value[activeFileId.value];
+  
   // 确保时间范围有效
-  const start = Math.max(0, Math.min(timeRange.value.start, csvData.value.length - 1));
-  const end = Math.max(start, Math.min(timeRange.value.end, csvData.value.length - 1));
+  const start = Math.max(0, Math.min(timeRange.value.start, currentFileData.csvData.length - 1));
+  const end = Math.max(start, Math.min(timeRange.value.end, currentFileData.csvData.length - 1));
   
   // 获取时间范围内的数据
-  const rangeData = csvData.value.slice(start, end + 1);
+  const rangeData = currentFileData.csvData.slice(start, end + 1);
   
   // 过滤出有效的数值数据
   const validValues = rangeData
@@ -548,7 +682,6 @@ onMounted(() => {
   background: #777;
 }
 
-/* factor-select横向滚动条样式 - WebKit浏览器 */
 #factor-select::-webkit-scrollbar {
   height: 6px;
   margin: 0 12px;
