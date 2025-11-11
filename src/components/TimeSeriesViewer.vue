@@ -4,7 +4,7 @@
       <div id="logo" class="flex justify-center items-center bg-[#202124] p-2 h-[10%] border-l border-[#323233] rounded-tl-2xl">
         <!-- 文件输入框已移至组件底部 -->
         <svg height="1em" style="flex:none;line-height:1" viewBox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><title>TRAE</title><path d="M24 20.541H3.428v-3.426H0V3.4h24V20.54zM3.428 17.115h17.144V6.827H3.428v10.288zm8.573-5.196l-2.425 2.424-2.424-2.424 2.424-2.424 2.425 2.424zm6.857-.001l-2.424 2.423-2.425-2.423 2.425-2.425 2.424 2.425z" fill="#32F08C"></path></svg>
-        <p class="mx-2">NUL4i</p>
+        <p class="mx-2">CSViewer</p>
         <div v-if="loading" class="text-xs text-[#02DA7F] mt-1">加载中...</div>
       </div>
       <div id="controls" class="justify-between h-[90%] bg-[#1A1B1D] rounded-bl-2xl border-l border-[#323233] overflow-hidden flex flex-col">
@@ -86,7 +86,7 @@
         class="hidden"
       />
       <div class="h-[75%] w-[99%] bg-[#202124] rounded-2xl justify-center flex items-center my-2">
-        <div id="chart" class="w-[98%] h-[98%]"></div>
+        <div id="chart" class="w-[98%] h-[98%] flex"></div>
       </div>
       <div id="bash" class="h-[16%] w-[99%] text-xs flex text-gray-500 my-[1%] flex-col">
         <div class="w-full flex items-center flex-col h-full"> 
